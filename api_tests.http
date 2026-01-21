@@ -1,0 +1,225 @@
+@baseUrl = http://127.0.0.1:8000/api
+@email = user@example.com
+@password = password
+@adminEmail = admin@example.com
+@adminPassword = password
+
+### ------------------------------------------------------------------------
+### API TEST REHBERİ
+### ------------------------------------------------------------------------
+### Bu dosya projedeki TÜM endpointleri içerir.
+### ------------------------------------------------------------------------
+
+### ========================================================================
+### 1. KİMLİK DOĞRULAMA (AUTH)
+### ========================================================================
+
+### Kayıt Ol
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+    "name": "Test User",
+    "email": "{{email}}",
+    "password": "{{password}}",
+    "password_confirmation": "{{password}}"
+}
+
+### Giriş Yap (Token Otomatik Kaydedilir)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{email}}",
+    "password": "{{password}}"
+}
+
+#### TOKEN (Otomatik Değişken)
+@authToken = {{login.response.body.access_token}}
+
+
+### Profilimi Gör
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{authToken}}
+
+### Token Yenile
+POST {{baseUrl}}/auth/refresh
+Authorization: Bearer {{authToken}}
+
+### Çıkış Yap
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{authToken}}
+
+
+### ========================================================================
+### 2. MEKANLAR (VENUES)
+### ========================================================================
+
+### Mekanları Listele
+GET {{baseUrl}}/venues
+Authorization: Bearer {{authToken}}
+
+### Yeni Mekan Ekle (Sadece Admin)
+# @name createVenue
+POST {{baseUrl}}/venues
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "name": "Vodafone Park",
+    "address": "Beşiktaş, İstanbul",
+    "capacity": 42000
+}
+
+@venueId = {{createVenue.response.body.id}}
+
+### Tek Bir Mekanı Gör
+GET {{baseUrl}}/venues/{{venueId}}
+Authorization: Bearer {{authToken}}
+
+### Mekan Bilgilerini Güncelle (Sadece Admin)
+PUT {{baseUrl}}/venues/{{venueId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "name": "Tüpraş Stadyumu",
+    "address": "Beşiktaş, İstanbul (Updated)",
+    "capacity": 42500
+}
+
+### Mekanın Koltuklarını Getir
+GET {{baseUrl}}/venues/{{venueId}}/seats
+Authorization: Bearer {{authToken}}
+
+### Mekanı Sil (Sadece Admin)
+DELETE {{baseUrl}}/venues/{{venueId}}
+Authorization: Bearer {{authToken}}
+
+
+### ========================================================================
+### 3. ETKİNLİKLER (EVENTS)
+### ========================================================================
+
+### Etkinlikleri Listele
+GET {{baseUrl}}/events
+Authorization: Bearer {{authToken}}
+
+### Yeni Etkinlik Ekle (Sadece Admin)
+# @name createEvent
+POST {{baseUrl}}/events
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "venue_id": 1,
+    "name": "Büyük Konser",
+    "description": "Yılın en büyük konseri",
+    "start_date": "2026-06-15 20:00:00",
+    "end_date": "2026-06-15 23:00:00"
+}
+
+@eventId = {{createEvent.response.body.id}}
+
+### Tek Bir Etkinliği Gör
+GET {{baseUrl}}/events/{{eventId}}
+Authorization: Bearer {{authToken}}
+
+### Etkinlik Güncelle (Sadece Admin)
+PUT {{baseUrl}}/events/{{eventId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "name": "Büyük Konser (Tarih Değişti)",
+    "description": "Yeni tarihli konser",
+    "start_date": "2026-07-20 21:00:00",
+    "end_date": "2026-07-20 23:59:00"
+}
+
+### Etkinlik İçin Koltuk Durumlarını Gör
+# Bu endpoint hangi koltukların dolu olduğunu gösterir
+GET {{baseUrl}}/events/{{eventId}}/seats
+Authorization: Bearer {{authToken}}
+
+### Etkinliği Sil (Sadece Admin)
+DELETE {{baseUrl}}/events/{{eventId}}
+Authorization: Bearer {{authToken}}
+
+
+### ========================================================================
+### 4. REZERVASYONLAR (RESERVATIONS)
+### ========================================================================
+
+### Rezervasyon Yap
+# @name createReservation
+POST {{baseUrl}}/reservations
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "event_id": 1,
+    "seat_ids": [1, 2]
+}
+
+@reservationId = {{createReservation.response.body.id}}
+
+### Rezervasyonları Listele
+GET {{baseUrl}}/reservations
+Authorization: Bearer {{authToken}}
+
+### Tek Bir Rezervasyonu Gör
+GET {{baseUrl}}/reservations/{{reservationId}}
+Authorization: Bearer {{authToken}}
+
+### Rezervasyonu Onayla (Ödeme Başarılı)
+POST {{baseUrl}}/reservations/{{reservationId}}/confirm
+Authorization: Bearer {{authToken}}
+
+### Rezervasyonu İptal Et
+DELETE {{baseUrl}}/reservations/{{reservationId}}
+Authorization: Bearer {{authToken}}
+
+
+### ========================================================================
+### 5. BİLETLER (TICKETS)
+### ========================================================================
+
+### Biletlerimi Listele
+# @name listTickets
+GET {{baseUrl}}/tickets
+Authorization: Bearer {{authToken}}
+
+@ticketId = {{listTickets.response.body.0.id}}
+
+### Tek Bir Bilet Gör
+GET {{baseUrl}}/tickets/{{ticketId}}
+Authorization: Bearer {{authToken}}
+
+### Bileti PDF Olarak İndir
+GET {{baseUrl}}/tickets/{{ticketId}}/download
+Authorization: Bearer {{authToken}}
+
+
+### ========================================================================
+### 6. KOLTUK YÖNETİMİ (SEATS)
+### ========================================================================
+
+### Koltuk Blokla (Bakım vb. için - Admin)
+POST {{baseUrl}}/seats/block
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "seat_ids": [5, 6]
+}
+
+### Koltuk Serbest Bırak
+DELETE {{baseUrl}}/seats/release
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "seat_ids": [5, 6]
+}
