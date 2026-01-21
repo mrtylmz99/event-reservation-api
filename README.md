@@ -11,6 +11,25 @@ Etkinlik biletleme ve rezervasyon sistemi için geliştirilmiş REST API.
 - **Güvenlik:** JWT tabanlı kimlik doğrulama.
 - **Docker:** MySQL veritabanı için Docker yapılandırması.
 
+## Mimarisi
+
+```mermaid
+erDiagram
+    User ||--o{ Reservation : makes
+    User {
+        string name
+        string email
+        boolean is_admin
+    }
+    Venue ||--o{ Event : hosts
+    Venue ||--o{ Seat : contains
+    Event ||--o{ Reservation : has
+    Reservation ||--o{ Ticket : generates
+    Reservation ||--o{ ReservationItem : includes
+    Seat ||--o{ ReservationItem : reserved_as
+    Ticket }|--|| Seat : for
+```
+
 ## Kurulum
 
 1.  **Gereksinimler:**
